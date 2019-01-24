@@ -5,12 +5,16 @@ module CspExamples
 
 3.1 COPY
 
-> "Problem: Write a process X to copy characters output by process west
-to process, east."
+> "Problem: Write a process X to copy characters output by process west to process, east."
 
-As an addition to the paper's example, we stop when west is closed,
-otherwise we would just hang at this point. To indicate this to the
-client, we close the east channel.
+Julia uses Channels to communicate messages between Tasks, which we use to model Hoare's
+"processes". This function takes each character out of west and puts it in east,
+continuously, until west is closed.
+
+As an addition to the paper's example, we stop when west is closed, otherwise we would just
+hang at this point. To indicate this to the client, we close the east channel.
+
+Note that if west is never closed, we will also not close east, which is absolutely fine. Note also that
 """
 function S31_COPY(west::Channel{Char}, east::Channel{Char})
     for c in west
@@ -27,13 +31,17 @@ end
 > "Problem: Adapt the previous program [COPY] to replace every pair of
 consecutive asterisks "**" by an upward arrow "↑". Assume that the final
 character input is not an asterisk."
+
+Following Hoare's example, if we get an asterisk from west, we then take another character
+as well. If the second character is also an asterisk, we write the upward arrow; if not, we
+put the two characters into east as we would have in COPY.
 """
 function S32_SQUASH(west::Channel{Char}, east::Channel{Char})
     for c in west
         if c == '*'
             c1 = take!(west)
             if c1 == '*'
-                put!(east, '↑')
+                put!(east, '↑')  # hooray for unicode
             else
                 put!(east, c)
                 put!(east, c1)
@@ -51,6 +59,9 @@ end
 Hoare adds a remark to 3.2 SQUASH: "(2) As an exercise, adapt this
 process to deal sensibly with input which ends with an odd number of
 asterisks."
+
+We do this by wrapping the `take!` in a try-catch, since the naked take! will throw if the
+Channel has been closed.
 """
 function S31_SQUASH_EXT(west::Channel{Char}, east::Channel{Char})
     for c in west
