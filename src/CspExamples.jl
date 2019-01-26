@@ -106,7 +106,7 @@ function S33_DISASSEMBLE(cardfile::Channel{String}, X::Channel{>:Char})
 end
 
 """
-    S34_ASSEMBLE(
+    S34_ASSEMBLE(X::Channel{Char}, lineprinter::Channel{>:String}, linelength=125)
 
 3.4 ASSEMBLE
 
