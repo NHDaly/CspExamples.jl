@@ -12,15 +12,17 @@ Julia uses Channels to communicate messages between Tasks, which we use to model
 continuously, until west is closed.
 
 As an addition to the paper's example, we stop when west is closed, otherwise we would just
-hang at this point. To indicate this to the client, we close the east channel.
+hang at this point. Note that we don't close east. Returning from this function is signal
+enough that west is closed -- at that point the caller can close(east) if desired. Or, the
+user can pass this function in the Channel constructor, and when the function returns the
+Channel is automatically closed.
 
-Note that if west is never closed, we will also not close east, which is absolutely fine. Note also that
+Note that if west is never closed, we will never return, which is absolutely fine.
 """
 function S31_COPY(west::Channel{Char}, east::Channel{Char})
     for c in west
         put!(east, c)
     end
-    close(east)
 end
 
 """
@@ -50,7 +52,6 @@ function S32_SQUASH(west::Channel{Char}, east::Channel{Char})
             put!(east, c)
         end
     end
-    close(east)
 end
 
 """
@@ -80,7 +81,6 @@ function S32_SQUASH_EXT(west::Channel{Char}, east::Channel{Char})
         end
         put!(east, c)
     end
-    close(east)
 end
 
 
@@ -103,7 +103,6 @@ function S33_DISASSEMBLE(cardfile::Channel{String}, X::Channel{>:Char})
         end
         put!(X, ' ')
     end
-    close(X)
 end
 
 """
@@ -126,7 +125,6 @@ function S34_ASSEMBLE(X::Channel{Char}, lineprinter::Channel{>:String}, lineleng
         out = rpad(String(out), linelength)
         put!(lineprinter, out)
     end
-    close(lineprinter)
 end
 
 end
