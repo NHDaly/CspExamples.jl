@@ -31,7 +31,7 @@ end
 
 @testset "S32_SQUASH_EXT" begin
     # Test 1 * at end
-    west = make_filled_channel("hello**world*", csize=1)
+    west = make_filled_channel("hello**world*")
     east = Channel{Char}(Inf)
     CspExamples.S32_SQUASH_EXT(west, east)
     @test String(collect(east)) == "hello↑world*"
@@ -41,4 +41,30 @@ end
     east = Channel{Char}(Inf)
     CspExamples.S32_SQUASH_EXT(west, east)
     @test String(collect(east)) == "hello↑world↑*"
+end
+
+@testset "S33_DISASSEMBLE" begin
+    cardfile = Channel(ctype=String) do ch
+        for s in ["hey", "buddy"]; put!(ch, s); end
+    end
+    X = Channel{Char}(Inf)
+    CspExamples.S33_DISASSEMBLE(cardfile, X)
+    @test String(collect(X)) == "hey buddy "
+end
+
+@testset "S34_ASSEMBLE" begin
+    linelength = 3
+    inputstr = rand('a':'z', linelength*2)
+    X = Channel(ctype=Char) do ch
+        # Pass two characters too few.
+        for s in inputstr[1:end-2]; put!(ch, s); end
+    end
+    lineprinter = Channel(Inf)
+    CspExamples.S34_ASSEMBLE(X, lineprinter, linelength)
+
+    # Expect to get back the inputstr split into 125-character lines
+    expected = inputstr
+    expected[end-1:end] .= ' '
+    expected = [String(expected[1+(i-1)*linelength:i*linelength]) for i in 1:2]
+    @test collect(lineprinter) == expected
 end

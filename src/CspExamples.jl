@@ -85,16 +85,18 @@ end
 
 
 """
-
+    S33_DISASSEMBLE(cardfile::Channel{String}, X::Channel{Char})
 
 3.3 DISASSEMBLE
 
-> "Problem: to read cards from a cardfile and output to process X the
-stream of characters they contain. An extra space should be inserted at
-the end of each card."
+> "Problem: to read cards from a cardfile and output to process X the stream of characters
+they contain. An extra space should be inserted at the end of each card."
 
+NOTE: I have typed the output Channel as `Channel{>:Char}`, meaning we don't care what the
+element type of Channel is, as long as it includes Chars. This gives the caller more
+flexibility. (e.g. they can pass a Channel{Any} if they want to.)
 """
-function S33_DISASSEMBLE(cardfile::Channel{String}, X::Channel{Char})
+function S33_DISASSEMBLE(cardfile::Channel{String}, X::Channel{>:Char})
     for cardimage in cardfile
         for c in cardimage
             put!(X, c)
@@ -102,6 +104,29 @@ function S33_DISASSEMBLE(cardfile::Channel{String}, X::Channel{Char})
         put!(X, ' ')
     end
     close(X)
+end
+
+"""
+    S34_ASSEMBLE(
+
+3.4 ASSEMBLE
+
+> "Problem: To read a stream of characters from process X and print them in lines of 125
+characters on a lineprinter. The last line should be completed with spaces if necessary."
+
+NOTE: I've made the linelength a parameter, so that this method can split the input into
+lines of whatever length desired. (This makes testing easier!)
+"""
+function S34_ASSEMBLE(X::Channel{Char}, lineprinter::Channel{>:String}, linelength=125)
+    while isopen(X)
+        out = Char[]
+        for c in Base.Iterators.take(X, linelength)
+            push!(out, c)
+        end
+        out = rpad(String(out), linelength)
+        put!(lineprinter, out)
+    end
+    close(lineprinter)
 end
 
 end
