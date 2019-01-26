@@ -6,12 +6,21 @@ fill_channel(ch, input) = for v in input
 end
 
 @testset "S31_COPY" begin
-    input = "hello"
-    # The input channel is a 1-character buffer as described in the paper.
-    west = Channel(ch->(fill_channel(ch, input)), csize=1, ctype=Char)
-    east = Channel{Char}(Inf) # allow buffering the output infinitely for ease of testing
-    CspExamples.S31_COPY(west, east)
-    @test String(collect(east)) == input
+    @testset "Copy pre-filled buffer" begin
+        # The input channel is a 1-character buffer as described in the paper.
+        west = Channel(ch->(fill_channel(ch, "hello")), csize=1, ctype=Char)
+        east = Channel(ch->CspExamples.S31_COPY(west, ch), ctype=Char)
+        @test String(collect(east)) == "hello"
+    end
+    @testset "test incremental concurrent copying" begin
+        west = Channel{Char}(1)
+        east = Channel(ch->CspExamples.S31_COPY(west, ch), ctype=Char, csize=Inf)
+        put!(west, 'w');
+        @test (yield(); isready(east))  # Need to yield before testing concurrent behavior
+        put!(west, 'o'); put!(west, 'r'); put!(west, 'l'); put!(west, 'd');
+        close(west)
+        @test String(collect(east)) == "world"
+    end
 end
 
 @testset "S32_SQUASH" begin
@@ -19,8 +28,7 @@ end
     west = Channel(csize=1, ctype=Char) do ch
         fill_channel(ch, "hello*to**the*world")
     end
-    east = Channel{Char}(Inf) # allow buffering the output infinitely for ease of testing
-    CspExamples.S32_SQUASH(west, east)
+    east = Channel(ch->CspExamples.S32_SQUASH(west, ch), ctype=Char)
     @test String(collect(east)) == "hello*to↑the*world"
 end
 
@@ -32,14 +40,12 @@ end
 @testset "S32_SQUASH_EXT" begin
     # Test 1 * at end
     west = make_filled_channel("hello**world*")
-    east = Channel{Char}(Inf)
-    CspExamples.S32_SQUASH_EXT(west, east)
+    east = Channel(ch->CspExamples.S32_SQUASH_EXT(west, ch), ctype=Char)
     @test String(collect(east)) == "hello↑world*"
 
     # Test 3 *s at end
     west = make_filled_channel("hello**world***", csize=1)
-    east = Channel{Char}(Inf)
-    CspExamples.S32_SQUASH_EXT(west, east)
+    east = Channel(ch->CspExamples.S32_SQUASH_EXT(west, ch), ctype=Char)
     @test String(collect(east)) == "hello↑world↑*"
 end
 
@@ -47,9 +53,8 @@ end
     cardfile = Channel(ctype=String) do ch
         for s in ["hey", "buddy"]; put!(ch, s); end
     end
-    X = Channel{Char}(Inf)
-    CspExamples.S33_DISASSEMBLE(cardfile, X)
-    @test String(collect(X)) == "hey buddy "
+    @test "hey buddy " ==
+            String(collect(Channel(X->CspExamples.S33_DISASSEMBLE(cardfile, X), ctype=Char)))
 end
 
 @testset "S34_ASSEMBLE" begin
@@ -61,6 +66,7 @@ end
     end
     lineprinter = Channel(Inf)
     CspExamples.S34_ASSEMBLE(X, lineprinter, linelength)
+    close(lineprinter)
 
     # Expect to get back the inputstr split into 125-character lines
     expected = inputstr
