@@ -91,6 +91,10 @@ end
 
 > "Problem: to read cards from a cardfile and output to process X the stream of characters
 they contain. An extra space should be inserted at the end of each card."
+
+NOTE: I have typed the output Channel as `Channel{>:Char}`, meaning we don't care what the
+element type of Channel is, as long as it includes Chars. This gives the caller more
+flexibility. (e.g. they can pass a Channel{Any} if they want to.)
 """
 function S33_DISASSEMBLE(cardfile::Channel{String}, X::Channel{>:Char})
     for cardimage in cardfile
