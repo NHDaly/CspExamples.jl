@@ -63,7 +63,7 @@ asterisks."
 We do this by wrapping the `take!` in a try-catch, since the naked take! will throw if the
 Channel has been closed.
 """
-function S31_SQUASH_EXT(west::Channel{Char}, east::Channel{Char})
+function S32_SQUASH_EXT(west::Channel{Char}, east::Channel{Char})
     for c in west
         if c == '*'
             # TODO: Is it possible to also have a timeout like thomas11 does in Go?
@@ -81,6 +81,27 @@ function S31_SQUASH_EXT(west::Channel{Char}, east::Channel{Char})
         put!(east, c)
     end
     close(east)
+end
+
+
+"""
+
+
+3.3 DISASSEMBLE
+
+> "Problem: to read cards from a cardfile and output to process X the
+stream of characters they contain. An extra space should be inserted at
+the end of each card."
+
+"""
+function S33_DISASSEMBLE(cardfile::Channel{String}, X::Channel{Char})
+    for cardimage in cardfile
+        for c in cardimage
+            put!(X, c)
+        end
+        put!(X, ' ')
+    end
+    close(X)
 end
 
 end
