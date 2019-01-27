@@ -128,30 +128,47 @@ function S34_ASSEMBLE(X::Channel{Char}, lineprinter::Channel{>:String}, lineleng
 end
 
 """
-    S35_Reformat
+    S35_Reformat(west::Channel{String}, east::Channel{>:String}, linelength=125)
 
-3.5 Reformaeast "Problem: Read a sequence of cards of 80 characters each, and print
+3.5 Reformat
+
+> "Problem: Read a sequence of cards of 80 characters each, and print
 the characters on a lineprinter at 125 characters per line. Every card
 should be followed by an extra space, and the last line should be
 completed with spaces if necessary."
 
 This one's fun! We can reuse the existing functions by creating an intermediate Channel and
 Task (equivalent to a Process in Hoare's paper) to act as the output and then input.
+
+Note that this function blocks on its call to ASSEMBLE, so it doesn't return until the
+reformatting is completed. This keeps with the style of the functions seen so far, which
+block internally, allowing the caller to choose whether to run it asynchronously.
 """
 function S35_Reformat(west::Channel{String}, east::Channel{>:String}, linelength=125)
-    S34_ASSEMBLE(Channel(ctype=Char) do ch
-                     S33_DISASSEMBLE(west, ch)
-                 end, east, linelength)
+    # This Channel constructor creates a channel and spawns a Task (and yields to it). When
+    # the Task is completed, the Channel is closed.
+    disassembled = Channel(ctype=Char) do ch
+        S33_DISASSEMBLE(west, ch)
+    end
+    S34_ASSEMBLE(disassembled, east, linelength)
 end
 
+"""
+    S35_Reformat2(west::Channel{String}, east::Channel{>:String}, linelength=125)
 
-# # TODO: I tried to also make this simple alternative implementation example, but it
-# # deadlocks! Why?
-# function S35_Reformat2(west::Channel{String}, east::Channel{>:String}, linelength=125)
-#     tmp = Channel{Char}(0)
-#     @async S33_DISASSEMBLE(west, tmp)
-#     S34_ASSEMBLE(tmp, east, linelength)
-# end
+An alternative implementation of S35_Reformat, which makes the concurrency operations more
+explicit, and keeps a style more similar to Go.
+"""
+function S35_Reformat2(west::Channel{String}, east::Channel{>:String}, linelength=125)
+    tmp = Channel{Char}(0)
+    @async begin
+        S33_DISASSEMBLE(west, tmp);
+        # Note that we must close(tmp) to signal to ASSEMBLE that it's okay to return,
+        # because we've chosen to not have DISASSEMBLE and ASSEMBLE close output channels.
+        close(tmp);
+    end
+    S34_ASSEMBLE(tmp, east, linelength)
+end
 
 
 end
