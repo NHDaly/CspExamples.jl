@@ -127,4 +127,21 @@ function S34_ASSEMBLE(X::Channel{Char}, lineprinter::Channel{>:String}, lineleng
     end
 end
 
+"""
+    S35_Reformat
+
+3.5 Reformaeast "Problem: Read a sequence of cards of 80 characters each, and print
+the characters on a lineprinter at 125 characters per line. Every card
+should be followed by an extra space, and the last line should be
+completed with spaces if necessary."
+
+This one's fun! We can reuse the existing functions by creating an intermediate Channel and
+Task (equivalent to a Process in Hoare's paper) to act as the output and then input.
+"""
+function S35_Reformat(west::Channel{String}, east::Channel{>:String}, linelength=125)
+    S34_ASSEMBLE(Channel(ctype=Char) do ch
+                     S33_DISASSEMBLE(west, ch)
+                 end, east, linelength)
+end
+
 end

@@ -40,7 +40,7 @@ end
 @testset "S32_SQUASH_EXT" begin
     # Test 1 * at end
     west = make_filled_channel("hello**world*")
-    east = Channel(ch->CspExamples.S32_SQUASH_EXT(west, ch), ctype=Char)
+    east = Channel(ch->CspExamples.S32_SQUASH_EXT(west, ch),ctype=Char)
     @test String(collect(east)) == "hello↑world*"
 
     # Test 3 *s at end
@@ -73,4 +73,11 @@ end
     expected[end-1:end] .= ' '
     expected = [String(expected[1+(i-1)*linelength:i*linelength]) for i in 1:2]
     @test collect(lineprinter) == expected
+end
+
+@testset "S35_Reformat" begin
+    reformatted = Channel() do ch
+        CspExamples.S35_Reformat(make_filled_channel(["hello", "world"]), ch, 4)
+    end
+    @test collect(reformatted) == ["hell", "o wo", "rld "]
 end
