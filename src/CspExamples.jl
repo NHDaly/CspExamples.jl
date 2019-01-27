@@ -170,5 +170,40 @@ function S35_Reformat2(west::Channel{String}, east::Channel{>:String}, linelengt
     S34_ASSEMBLE(tmp, east, linelength)
 end
 
+"""
+    S35_Reformat_non_concurrent(input::Array{String})::Array{String}
+
+As Hoare notes in the paper:
+> "This elementary problem [Reformat] is difficult to solve elegantly without coroutines."
+
+This is indeed the case, as illustrated in this best-faith attempt. What makes it tricky is
+that you have two separate, but overlapping, loops that end at different times. You cannot
+represent them both as real for-loops in straightline code, but you can in concurrent
+programming, because a concurrent program grants you two separate Instruction Pointers to
+trace through each loop.
+
+Here, without concurrency, we emulate the second loop (printing 125-character lines) by
+with an if-statement, and manually re-initializing the loop's variables.
+"""
+function S35_Reformat_non_concurrent(input::Array{String}, linelength=125)::Array{String}
+    outs = String[]
+    out = Char[]
+    for s in input
+        for c in s
+            push!(out, c)
+            # This is the manual implementation of the "second loop":
+            if length(out) == linelength
+                # "end of the loop"
+                push!(outs, rpad(String(out), linelength))
+                out = Char[]  # Re-initialize
+            end
+        end
+        push!(out, ' ')
+    end
+    # Here we have to duplicate the end of the "second loop" since there are two ways to
+    # exit the "loop condition".
+    push!(outs, rpad(String(out), linelength))
+    return outs
+end
 
 end

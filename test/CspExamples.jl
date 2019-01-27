@@ -87,3 +87,13 @@ end
     end
     @test collect(reformatted) == ["hell", "o wo", "rld "]
 end
+@testset "S35_Reformat_non_concurrent" begin
+    # While the implementation of S35_Reformat_non_concurrent is more convoluted than
+    # the concurrent version, the callsite is of course simpler because we don't have to
+    # consider concurrency at all.
+    #
+    # A best-of-both-worlds approach might be to expose a "normal" interface like this one,
+    # as a wrapper around a concurrent implementation.
+    reformatted = CspExamples.S35_Reformat_non_concurrent(["hello", "world"], 4)
+    @test reformatted == ["hell", "o wo", "rld "]
+end
