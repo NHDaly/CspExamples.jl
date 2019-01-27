@@ -33,18 +33,18 @@ end
 end
 
 # Convenience function to create and fill a channel.
-make_filled_channel(input; csize=0, ctype=eltype(input)) = Channel(csize=csize, ctype=ctype) do ch
+make_fill_close_chnl(input; csize=0, ctype=eltype(input)) = Channel(csize=csize, ctype=ctype) do ch
     fill_channel(ch, input)
 end
 
 @testset "S32_SQUASH_EXT" begin
     # Test 1 * at end
-    west = make_filled_channel("hello**world*")
+    west = make_fill_close_chnl("hello**world*")
     east = Channel(ch->CspExamples.S32_SQUASH_EXT(west, ch), ctype=Char)
     @test String(collect(east)) == "hello↑world*"
 
     # Test 3 *s at end
-    west = make_filled_channel("hello**world***", csize=1)
+    west = make_fill_close_chnl("hello**world***", csize=1)
     east = Channel(ch->CspExamples.S32_SQUASH_EXT(west, ch), ctype=Char)
     @test String(collect(east)) == "hello↑world↑*"
 end
@@ -77,13 +77,13 @@ end
 
 @testset "S35_Reformat" begin
     reformatted = Channel() do ch
-        CspExamples.S35_Reformat(make_filled_channel(["hello", "world"]), ch, 4)
+        CspExamples.S35_Reformat(make_fill_close_chnl(["hello", "world"]), ch, 4)
     end
     @test collect(reformatted) == ["hell", "o wo", "rld "]
 end
 @testset "S35_Reformat2" begin
     reformatted = Channel() do ch
-        CspExamples.S35_Reformat2(make_filled_channel(["hello", "world"]), ch, 4)
+        CspExamples.S35_Reformat2(make_fill_close_chnl(["hello", "world"]), ch, 4)
     end
     @test collect(reformatted) == ["hell", "o wo", "rld "]
 end
