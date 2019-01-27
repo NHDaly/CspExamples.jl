@@ -74,3 +74,26 @@ end
     expected = [String(expected[1+(i-1)*linelength:i*linelength]) for i in 1:2]
     @test collect(lineprinter) == expected
 end
+
+@testset "S35_Reformat" begin
+    reformatted = Channel() do ch
+        CspExamples.S35_Reformat(make_filled_channel(["hello", "world"]), ch, 4)
+    end
+    @test collect(reformatted) == ["hell", "o wo", "rld "]
+end
+@testset "S35_Reformat2" begin
+    reformatted = Channel() do ch
+        CspExamples.S35_Reformat2(make_filled_channel(["hello", "world"]), ch, 4)
+    end
+    @test collect(reformatted) == ["hell", "o wo", "rld "]
+end
+@testset "S35_Reformat_non_concurrent" begin
+    # While the implementation of S35_Reformat_non_concurrent is more convoluted than
+    # the concurrent version, the callsite is of course simpler because we don't have to
+    # consider concurrency at all.
+    #
+    # A best-of-both-worlds approach might be to expose a "normal" interface like this one,
+    # as a wrapper around a concurrent implementation.
+    reformatted = CspExamples.S35_Reformat_non_concurrent(["hello", "world"], 4)
+    @test reformatted == ["hell", "o wo", "rld "]
+end
