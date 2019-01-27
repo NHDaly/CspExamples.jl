@@ -81,3 +81,9 @@ end
     end
     @test collect(reformatted) == ["hell", "o wo", "rld "]
 end
+#@testset "S35_Reformat2" begin
+#    reformatted = Channel() do ch
+#        CspExamples.S35_Reformat2(make_filled_channel(["hello", "world"]), ch, 4)
+#    end
+#    @test collect(reformatted) == ["hell", "o wo", "rld "]
+#end

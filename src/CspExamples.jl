@@ -144,4 +144,14 @@ function S35_Reformat(west::Channel{String}, east::Channel{>:String}, linelength
                  end, east, linelength)
 end
 
+
+# # TODO: I tried to also make this simple alternative implementation example, but it
+# # deadlocks! Why?
+# function S35_Reformat2(west::Channel{String}, east::Channel{>:String}, linelength=125)
+#     tmp = Channel{Char}(0)
+#     @async S33_DISASSEMBLE(west, tmp)
+#     S34_ASSEMBLE(tmp, east, linelength)
+# end
+
+
 end
