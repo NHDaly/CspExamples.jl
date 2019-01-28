@@ -128,7 +128,7 @@ function S34_ASSEMBLE(X::Channel{Char}, lineprinter::Channel{>:String}, lineleng
 end
 
 """
-    S35_Reformat(west::Channel{String}, east::Channel{>:String}, linelength=125)
+    S35_Reformat(cardfile::Channel{String}, lineprinter::Channel{>:String}, linelength=125)
 
 3.5 Reformat
 
@@ -144,34 +144,34 @@ Note that this function blocks on its call to ASSEMBLE, so it doesn't return unt
 reformatting is completed. This keeps with the style of the functions seen so far, which
 block internally, allowing the caller to choose whether to run it asynchronously.
 """
-function S35_Reformat(west::Channel{String}, east::Channel{>:String}, linelength=125)
+function S35_Reformat(cardfile::Channel{String}, lineprinter::Channel{>:String}, linelength=125)
     # This Channel constructor creates a channel and spawns a Task (and yields to it). When
     # the Task is completed, the Channel is closed.
     disassembled = Channel(ctype=Char) do ch
-        S33_DISASSEMBLE(west, ch)
+        S33_DISASSEMBLE(cardfile, ch)
     end
-    S34_ASSEMBLE(disassembled, east, linelength)
+    S34_ASSEMBLE(disassembled, lineprinter, linelength)
 end
 
 """
-    S35_Reformat2(west::Channel{String}, east::Channel{>:String}, linelength=125)
+    S35_Reformat2(cardfile::Channel{String}, lineprinter::Channel{>:String}, linelength=125)
 
 An alternative implementation of S35_Reformat, which makes the concurrency operations more
 explicit, and keeps a style more similar to Go.
 """
-function S35_Reformat2(west::Channel{String}, east::Channel{>:String}, linelength=125)
+function S35_Reformat2(cardfile::Channel{String}, lineprinter::Channel{>:String}, linelength=125)
     tmp = Channel{Char}(0)
     @async begin
-        S33_DISASSEMBLE(west, tmp);
+        S33_DISASSEMBLE(cardfile, tmp);
         # Note that we must close(tmp) to signal to ASSEMBLE that it's okay to return,
         # because we've chosen to not have DISASSEMBLE and ASSEMBLE close output channels.
         close(tmp);
     end
-    S34_ASSEMBLE(tmp, east, linelength)
+    S34_ASSEMBLE(tmp, lineprinter, linelength)
 end
 
 """
-    S35_Reformat_non_concurrent(input::Array{String})::Array{String}
+    S35_Reformat_non_concurrent(cardfile::Array{String})::Array{String}
 
 As Hoare notes in the paper:
 > "This elementary problem [Reformat] is difficult to solve elegantly without coroutines."
@@ -185,10 +185,10 @@ trace through each loop.
 Here, without concurrency, we emulate the second loop (printing 125-character lines) by
 with an if-statement, and manually re-initializing the loop's variables.
 """
-function S35_Reformat_non_concurrent(input::Array{String}, linelength=125)::Array{String}
+function S35_Reformat_non_concurrent(cardfile::Array{String}, linelength=125)::Array{String}
     outs = String[]
     out = Char[]
-    for s in input
+    for s in cardfile
         for c in s
             push!(out, c)
             # This is the manual implementation of the "second loop":
@@ -207,7 +207,7 @@ function S35_Reformat_non_concurrent(input::Array{String}, linelength=125)::Arra
 end
 
 """
-    S36_Conway(west::Channel{String}, east::Channel{>:String}, linelength=125)
+    S36_Conway(cardfile::Channel{String}, lineprinter::Channel{>:String}, linelength=125)
 
 3.6 Conway's Problem
 
@@ -217,10 +217,10 @@ asterisks by an upward arrow.
 Here again, we just add a call to an intermediate function, just like adding a step in a
 Unix pipeline of processes.
 """
-function S36_Conway(west::Channel{String}, east::Channel{>:String}, linelength=125)
-    ch1 = Channel(ctype=Char) do ch1; S33_DISASSEMBLE(west, ch1); end
+function S36_Conway(cardfile::Channel{String}, lineprinter::Channel{>:String}, linelength=125)
+    ch1 = Channel(ctype=Char) do ch1; S33_DISASSEMBLE(cardfile, ch1); end
     ch2 = Channel(ctype=Char) do ch2; S32_SQUASH(ch1, ch2); end
-    S34_ASSEMBLE(ch2, east, linelength)
+    S34_ASSEMBLE(ch2, lineprinter, linelength)
 end
 
 end
