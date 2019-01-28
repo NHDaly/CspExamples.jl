@@ -206,4 +206,21 @@ function S35_Reformat_non_concurrent(input::Array{String}, linelength=125)::Arra
     return outs
 end
 
+"""
+    S36_Conway(west::Channel{String}, east::Channel{>:String}, linelength=125)
+
+3.6 Conway's Problem
+
+> "Problem: Adapt the above program to replace every pair of consecutive
+asterisks by an upward arrow.
+
+Here again, we just add a call to an intermediate function, just like adding a step in a
+Unix pipeline of processes.
+"""
+function S36_Conway(west::Channel{String}, east::Channel{>:String}, linelength=125)
+    ch1 = Channel(ctype=Char) do ch1; S33_DISASSEMBLE(west, ch1); end
+    ch2 = Channel(ctype=Char) do ch2; S32_SQUASH(ch1, ch2); end
+    S34_ASSEMBLE(ch2, east, linelength)
+end
+
 end
