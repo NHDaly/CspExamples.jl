@@ -97,3 +97,10 @@ end
     reformatted = CspExamples.S35_Reformat_non_concurrent(["hello", "world"], 4)
     @test reformatted == ["hell", "o wo", "rld "]
 end
+
+@testset "S36_Conway" begin
+    reformatted = Channel() do ch
+        CspExamples.S36_Conway(make_fill_close_chnl(["**hello", "world**"]), ch, 4)
+    end
+    @test collect(reformatted) == ["↑hel", "lo w", "orld", "↑   "]
+end
