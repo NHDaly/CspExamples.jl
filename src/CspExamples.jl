@@ -1,5 +1,39 @@
 module CspExamples
 
+# -----------------------------------------------
+# Add Channel constructors that allow us to use multithreading if it's available!
+# These constructors don't exist yet in Julia base, so we'll define them here.
+# TODO: delete these once support has been added to Julia base/channel.jl.
+
+# Add a parameter (sticky=false) to the Channel constructors that create a Task, to allow
+# that task to be scheduled via the multithreaded scheduler.
+function Base.Threads.Channel(func::Function; ctype=Any, csize=0, taskref=nothing, sticky=true)
+    chnl = Channel{ctype}(csize)
+    task = Task(() -> func(chnl))
+    # If multithreading isn't safe in the current VERSION, ignore the user's sticky request
+    if VERSION >= v"1.3.0-DEV.554"
+        task.sticky = sticky
+        bind(chnl, task)
+        if sticky
+            yield(task) # immediately start it
+        else
+            schedule(task) # start it on (potentially) another thread
+        end
+    else
+        bind(chnl, task)
+        yield(task)
+    end
+    isa(taskref, Ref{Task}) && (taskref[] = task)
+    return chnl
+end
+
+function Base.Threads.Channel{T}(f::Function; kwargs...) where T
+    return Channel(f; ctype=T, kwargs...)
+end
+
+# -----------------------------------------------
+
+
 """
     S31_COPY(west::Channel, east::Channel)
 
@@ -147,7 +181,7 @@ block internally, allowing the caller to choose whether to run it asynchronously
 function S35_Reformat(cardfile::Channel{String}, lineprinter::Channel{>:String}, linelength=125)
     # This Channel constructor creates a channel and spawns a Task (and yields to it). When
     # the Task is completed, the Channel is closed.
-    disassembled = Channel(ctype=Char) do ch
+    disassembled = Channel(ctype=Char, sticky=false) do ch
         S33_DISASSEMBLE(cardfile, ch)
     end
     S34_ASSEMBLE(disassembled, lineprinter, linelength)
@@ -218,8 +252,8 @@ Here again, we just add a call to an intermediate function, just like adding a s
 Unix pipeline of processes.
 """
 function S36_Conway(cardfile::Channel{String}, lineprinter::Channel{>:String}, linelength=125)
-    ch1 = Channel(ctype=Char) do ch1; S33_DISASSEMBLE(cardfile, ch1); end
-    ch2 = Channel(ctype=Char) do ch2; S32_SQUASH(ch1, ch2); end
+    ch1 = Channel(ctype=Char, sticky=false) do ch1; S33_DISASSEMBLE(cardfile, ch1); end
+    ch2 = Channel(ctype=Char, sticky=false) do ch2; S32_SQUASH(ch1, ch2); end
     S34_ASSEMBLE(ch2, lineprinter, linelength)
 end
 
