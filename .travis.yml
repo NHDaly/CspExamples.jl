@@ -5,8 +5,12 @@ os:
   - linux
 
 julia:
-  - 1.0
+  - 1.1
   - nightly
+
+env:
+  - JULIA_NUM_THREADS=1
+  - JULIA_NUM_THREADS=4
 
 notifications:
   email: false
