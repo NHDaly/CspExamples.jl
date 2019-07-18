@@ -5,3 +5,5 @@ Julia implementations for the Example problems in Hoare's 1978 paper, ["Communic
 
 
 This repo was inspired by https://github.com/thomas11/csp, which does the same thing, but in Golang.
+
+https://discourse.julialang.org/t/csp-examples-in-julia/20011
